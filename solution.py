@@ -167,34 +167,35 @@ def block_3_analytics(df: pd.DataFrame) -> dict:
 
     # 1) Середня температура по містах (sort_values).
     #    Хто найтепліше / найхолодніше?
-    # TODO:
-    by_city_temp = ...
+    
+    by_city_temp = df.groupby("city")["temperature_c"].mean().sort_values(ascending=False)
     print("1) Середня T по містах:")
     print(by_city_temp.round(2).to_string())
 
     # 2) Сумарні опади по містах. Хто найвологіше?
-    # TODO:
-    by_city_precip = ...
+    
+    by_city_precip = df.groupby("city")["precipitation_mm"].sum().sort_values(ascending=False)
     print("\n2) Сумарні опади по містах:")
     print(by_city_precip.round(1).to_string())
 
     # 3) Місячна середня температура: resample('ME').mean()
     #    (для старих pandas — 'M' замість 'ME').
-    # TODO:
-    monthly_mean = ...
+    
+    monthly_mean = df.resample('ME')['temperature_c'].mean()
     print(f"\n3) Місячна середня T ({len(monthly_mean)} точок):")
     print(monthly_mean.round(2).to_string())
 
     # 4) Pivot: місто × місяць, значення = середня T.
-    # TODO:
-    pivot = ...
+    
+    pivot = df.pivot_table(values="temperature_c", index="city", columns="month", aggfunc="mean")
     print("\n4) Pivot місто × місяць:")
     print(pivot.round(1).to_string())
 
     # 5) Кількість днів з опадами > 5 мм по містах.
     #    Підказка: спочатку зробіть денні суми по місту, потім порахуйте.
-    # TODO:
-    rainy_days = ...
+    
+    daily = df.groupby(["city", pd.Grouper(freq="D")])["precipitation_mm"].sum()
+    rainy_days = (daily > 5).groupby(level="city").sum().astype(int)
     print("\n5) Дні з опадами > 5 мм:")
     print(rainy_days.to_string())
 
@@ -202,9 +203,14 @@ def block_3_analytics(df: pd.DataFrame) -> dict:
     #    Підхід: для кожного календарного місяця (1..12) обчислити
     #    "норму" як середню по тому ж місяцю обох років, потім знайти
     #    (year, month) з максимальним |відхиленням| від норми.
-    # TODO:
-    anomaly_month = ...
-    anomaly_dev = ...
+    
+    df["year"] = df.index.year
+    monthly_avg = df.groupby(["year", "month"])["temperature_c"].mean()
+    norm = monthly_avg.groupby(level="month").mean()
+    deviation = monthly_avg - norm.reindex(monthly_avg.index, level="month")
+    idx = deviation.abs().idxmax()
+    anomaly_month = idx
+    anomaly_dev = deviation[idx]
     print(f"\n6) Аномальний місяць: {anomaly_month}  відхилення = {anomaly_dev:+.2f}°C")
 
     return {
