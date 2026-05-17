@@ -230,32 +230,67 @@ def block_4_plots(df: pd.DataFrame, analytics: dict) -> None:
 
     # Графік 1: line — місячна динаміка температури по 3 обраних містах.
     # Вимоги: title, xlabel, ylabel, legend, форматування дат.
-    # TODO:
+    
     fig, ax = plt.subplots(figsize=(11, 5))
-    # ... побудувати графік ...
+    cities_3 = ["Київ", "Львів", "Одеса"]
+    for city in cities_3:
+        city_monthly = df[df["city"] == city]["temperature_c"].resample("ME").mean()
+        ax.plot(city_monthly.index, city_monthly.values, marker="o", markersize=3, label=city)
+    ax.set_title("Місячна динаміка температури по містах")
+    ax.set_xlabel("Дата")
+    ax.set_ylabel("Температура (°C)")
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+    fig.autofmt_xdate()
     fig.savefig(PLOTS_DIR / "01_monthly_temperature_lines.png", dpi=120, bbox_inches="tight")
     plt.close(fig)
 
     # Графік 2: bar — сумарні опади по містах.
-    # TODO:
+    
     fig, ax = plt.subplots(figsize=(8, 5))
-    # ... побудувати графік ...
+    by_city_precip = analytics["by_city_precip"]
+    ax.bar(by_city_precip.index, by_city_precip.values, color="steelblue")
+    ax.set_title("Сумарні опади по містах")
+    ax.set_xlabel("Місто")
+    ax.set_ylabel("Опади (мм)")
     fig.savefig(PLOTS_DIR / "02_precipitation_by_city.png", dpi=120, bbox_inches="tight")
     plt.close(fig)
 
     # Графік 3: hist — розподіл температур з вертикальними лініями
     #    mean і median.
-    # TODO:
+    
     fig, ax = plt.subplots(figsize=(9, 5))
-    # ... побудувати графік ...
+    temps = df["temperature_c"].dropna()
+    ax.hist(temps, bins=50, color="steelblue", edgecolor="white", alpha=0.8)
+    ax.axvline(temps.mean(), color="red", linewidth=1.5, label=f"mean = {temps.mean():.1f}°C")
+    ax.axvline(temps.median(), color="orange", linewidth=1.5, label=f"median = {temps.median():.1f}°C")
+    ax.set_title("Розподіл температур")
+    ax.set_xlabel("Температура (°C)")
+    ax.set_ylabel("Кількість спостережень")
+    ax.legend()
     fig.savefig(PLOTS_DIR / "03_temperature_histogram.png", dpi=120, bbox_inches="tight")
     plt.close(fig)
 
     # Графік 4: heatmap pivot місто × місяць (plt.imshow).
     #    Не забудьте colorbar і підписи осей.
-    # TODO:
+    
     fig, ax = plt.subplots(figsize=(11, 5))
-    # ... побудувати графік ...
+    pivot = analytics["pivot"]
+
+    im = ax.imshow(
+        pivot.values,
+        aspect="auto",
+        cmap="RdYlBu_r"
+    )
+
+    fig.colorbar(im, ax=ax, label="Температура (°C)")
+    ax.set_xticks(range(len(pivot.columns)))
+    ax.set_xticklabels(pivot.columns)
+    ax.set_yticks(range(len(pivot.index)))
+    ax.set_yticklabels(pivot.index)
+    ax.set_title("Середня температура: місто × місяць")
+    ax.set_xlabel("Місяць")
+    ax.set_ylabel("Місто")
     fig.savefig(PLOTS_DIR / "04_city_month_heatmap.png", dpi=120, bbox_inches="tight")
     plt.close(fig)
 
