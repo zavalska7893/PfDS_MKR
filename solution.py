@@ -115,30 +115,41 @@ def block_2_cleaning(df_raw: pd.DataFrame) -> pd.DataFrame:
     df = df_raw.copy()
 
     # 1) Перевірте типи (info), статистику (describe).
-    # TODO:
-    pass
+    
+    print(df.info())
+    print(df.describe())
 
     # 2) Перевести datetime у тип datetime та зробити індексом.
-    # TODO:
-    pass
+    
+    df["datetime"] = pd.to_datetime(df["datetime"])
+    df = df.set_index("datetime")
 
     # 3) Видалити повні дублі рядків.
-    # TODO:
-    n_dups = ...
+    
+    n_dups = df.duplicated().sum()
+    df = df.drop_duplicates()
     print(f"2) drop_duplicates: видалено {n_dups}")
 
     # 4) Заповнити NaN у humidity_pct МЕДІАНОЮ ПО МІСЯЦЮ В МЕЖАХ МІСТА.
     #    Підказка: groupby([city, month]).transform('median'),
     #    де month = df.index.month.
-    # TODO:
-    n_filled = ...
+    
+    n_nan_before = df["humidity_pct"].isna().sum()
+    df["month"] = df.index.month
+    df["humidity_pct"] = df.groupby(["city", "month"])["humidity_pct"] \
+        .transform(lambda s: s.fillna(s.median()))
+    n_filled = n_nan_before - df["humidity_pct"].isna().sum()
     print(f"3) Заповнено NaN humidity_pct: {n_filled}")
 
     # 5) Прибрати фізичні викиди:
     #    - temperature_c має бути в [-60, 60]
     #    - wind_speed_ms (де не NaN) має бути в [0, 60]
-    # TODO:
-    n_outliers = ...
+    mask = (
+        (df["temperature_c"] >= -60) & (df["temperature_c"] <= 60) &
+        (df["wind_speed_ms"].isna() | ((df["wind_speed_ms"] >= 0) & (df["wind_speed_ms"] <= 60)))
+    )
+    n_outliers = (~mask).sum()
+    df = df[mask]
     print(f"4) Видалено фізичних викидів: {n_outliers}")
 
     # 6) Звіт очищення.
