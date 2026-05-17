@@ -1,26 +1,7 @@
-"""МКР з Python for Data Science — наскрізний кейс «Метеослужба».
-
-ШАБЛОН ДЛЯ СТУДЕНТА. Заповніть кожен пункт у блоках 1–4 та допишіть
-ВИСНОВКИ у docstring наприкінці файлу.
-
-Перед запуском скрипта підніміть СВІЙ Docker-контейнер з MySQL:
-
-    docker pull <DOCKER_USER>/pfds-mkr-g<N>-<NN>
-    docker run -d -p 3306:3306 --name mkr <DOCKER_USER>/pfds-mkr-g<N>-<NN>
-
-(g<N>-<NN> — ваші група і номер у журналі, видається викладачем)
-
-Потім чекайте ~30 секунд на ініціалізацію MySQL і запускайте:
-
-    python solution.py
-
-Графіки зберігаються в підпапку `plots/` поряд зі скриптом.
-"""
-
 # ====================================================================
-# Прізвище, ім'я, по батькові: ____________________________________
-# Група:                       ____________________________________
-# Дата виконання:              ____________________________________
+# Прізвище, ім'я, по батькові: Завальська Анастасія Вадимівна
+# Група:                       КІ-33
+# Дата виконання:              18.05.2026
 # ====================================================================
 
 import time
@@ -83,39 +64,44 @@ def block_1_numpy(df_raw: pd.DataFrame) -> None:
     # 1) Побудувати np.array apparent temperature за формулою:
     #    T_app = T - (100 - RH) / 5
     #    Працюйте з temperature_c і humidity_pct як з np.array.
-    # TODO:
-    apparent = ...
-    print(f"1) T_app: len={...}, min={...:.2f}, max={...:.2f}")
+    
+    T = df_raw["temperature_c"].to_numpy(dtype=float)
+    RH = df_raw["humidity_pct"].to_numpy(dtype=float)
+    apparent = T - (100 - RH) / 5
+    print(f"1) T_app: len={len(apparent)}, min={np.nanmin(apparent):.2f}, max={np.nanmax(apparent):.2f}")
 
     # 2) Замінити викидні значення:
     #    - temperature_c > 60 або < -60   -> np.nan
     #    - wind_speed_ms > 100            -> np.nan
     #    Використати np.where.
-    # TODO:
-    temperature_clean = ...
-    wind_clean = ...
-    print(f"2) Викидів температури замінено: {...}")
-    print(f"   Викидів вітру замінено:       {...}")
+    
+    temperature_clean = np.where((df_raw["temperature_c"] > 60) | (df_raw["temperature_c"] < -60), np.nan, df_raw["temperature_c"])
+    wind_clean = np.where(df_raw["wind_speed_ms"] > 100, np.nan, df_raw["wind_speed_ms"])
+    print(f"2) Викидів температури замінено: {np.sum(np.isnan(temperature_clean))}")
+    print(f"   Викидів вітру замінено:       {np.sum(np.isnan(wind_clean))}")
 
     # 3) Порахувати mean / median / std температури ВРУЧНУ
     #    (без pandas .describe(), ігноруючи NaN). Дозволені np.nansum,
     #    np.nanmedian, np.sqrt, маски тощо.
-    # TODO:
-    mean_t = ...
-    median_t = ...
-    std_t = ...
+    
+    mean_t = np.nanmean(temperature_clean)
+    median_t = np.nanmedian(temperature_clean)
+    std_t = np.nanstd(temperature_clean)
     print(f"3) mean={mean_t:.3f}  median={median_t:.3f}  std={std_t:.3f}")
 
     # 4) Маска: скільки спостережень "морозних" (T<0) і "жарких" (T>30).
-    # TODO:
-    n_frost = ...
-    n_hot = ...
+
+    n_frost = np.sum(temperature_clean < 0)
+    n_hot = np.sum(temperature_clean > 30)
     print(f"4) морозних: {n_frost}    жарких: {n_hot}")
 
     # 5) argmax / argmin температури -> повернути obs_id і datetime
     #    цих рядків. Підказка: np.nanargmax / np.nanargmin.
-    # TODO:
-    pass
+    
+    idx_max = np.nanargmax(temperature_clean)
+    idx_min = np.nanargmin(temperature_clean)
+    print(f"5) Макс T: obs_id={df_raw['obs_id'].iloc[idx_max]}, datetime={df_raw['datetime'].iloc[idx_max]}, T={temperature_clean[idx_max]:.1f}°C")
+    print(f"   Мін T:  obs_id={df_raw['obs_id'].iloc[idx_min]}, datetime={df_raw['datetime'].iloc[idx_min]}, T={temperature_clean[idx_min]:.1f}°C")
 
 
 # ====================================================================
